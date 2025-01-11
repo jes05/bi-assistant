@@ -1,0 +1,16 @@
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+#setuptools==68.0.0
+#wheel==0.41.0
+numpy==1.23.3
+scikit-learn==1.5.1
+pandas==1.5.3
+#joblib==1.2.0
+#imbalanced-learn==0.9.1
+#gunicorn==20.1.0
+#tpot==0.12.2
+# Optional packages NOt Required for Model Deployment 
+shap==0.41.0
+lime==0.2.0.1
+matplotlib==3.7.1
+seaborn==0.12.2
