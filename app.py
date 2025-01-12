@@ -1,3 +1,4 @@
+import flask
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -6,13 +7,14 @@ import configparser
 
 # Load configuration
 config = configparser.ConfigParser()
-config.read('D://Mtech//Semester4//config.ini')
+config.read('D://Mtech//Semester4//bi-assistant-config.ini')
 
 # Initialize Flask app
 app = Flask(__name__)
 
 # Load processed data
 DATA_FILE = config['FILEPATH']['output_path']
+main_path = config['FILEPATH']['main_path']
 data = pd.read_csv(DATA_FILE)
 
 # Load Hugging Face model and tokenizer
@@ -71,7 +73,7 @@ def get_dataset_response(query):
 
 @app.route("/")
 def home():
-    return render_template("chat.html")
+    return render_template("template/chat.html")
 
 @app.route("/chat", methods=["POST"])
 def chat():

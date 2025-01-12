@@ -4,7 +4,7 @@ import numpy as np
 import configparser
 
 config = configparser.ConfigParser()
-config.read('D://Mtech//Semester4//config.ini')
+config.read('D://Mtech//Semester4//bi-assistant-config.ini')
 
 # Define paths
 source_path =  config['FILEPATH']['source_path']
@@ -129,7 +129,7 @@ for filename in new_files:
         # Add features to the summary
         feature_summary.append({
             "filename": filename,
-            "filepath": source_path+"//"+filename
+            "filepath": source_path+"//"+filename,
             "category": detected_category,
             "numerical": ", ".join(features_info["numerical"]),
             "categorical": ", ".join(features_info["categorical"]),
