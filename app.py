@@ -18,38 +18,40 @@ main_path = config['FILEPATH']['main_path']
 data = pd.read_csv(DATA_FILE)
 
 # Load Hugging Face model and tokenizer
-MODEL_NAME = "EleutherAI/gpt-neo-1.3B"  # Free and open-source model
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+#MODEL_NAME = "EleutherAI/gpt-neo-1.3B"  # Free and open-source model
+#tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+MODEL_NAME = "gpt2"
 model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
-# Set the padding token to the eos token if it's not already set
-if tokenizer.pad_token is None:
-    tokenizer.pad_token = tokenizer.eos_token  # Use eos_token as pad_token
+# Ensure padding token is set
+tokenizer.pad_token = tokenizer.eos_token  # Set pad_token to eos_token
 
-def generate_response(prompt, max_length=200):
+def generate_response(prompt, max_length=200, temperature=0.7):
     """
-    Generate a response from the model.
+    Generate a response from the model with focused behavior.
     
     Parameters:
         prompt (str): The input prompt for the model.
         max_length (int): Maximum length of the generated response.
+        temperature (float): Controls the randomness of the output.
     
     Returns:
         str: Generated response text.
     """
-    # Tokenize the input prompt, ensuring padding and truncation are handled
-    inputs = tokenizer(prompt, return_tensors="pt", padding=True, truncation=True)
-
-    # Generate the response with attention mask explicitly passed
+    inputs = tokenizer(prompt, return_tensors="pt", padding=True, truncation=True, max_length=512)
     outputs = model.generate(
         inputs.input_ids,
-        attention_mask=inputs.attention_mask,  # Pass attention_mask explicitly
         max_length=max_length,
         num_return_sequences=1,
-        pad_token_id=tokenizer.eos_token_id  # Set pad token to eos token
+        pad_token_id=tokenizer.eos_token_id,  # Use eos_token_id as pad_token_id
+        attention_mask=inputs.attention_mask,
+        temperature=temperature,  # Adjusting temperature for more focused responses
+        top_p=0.9,  # Adjusting to limit randomness further
+        top_k=50, 
+        do_sample=True,
+        no_repeat_ngram_size=2  
     )
-
-    # Decode the response and remove special tokens
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return response
 
@@ -63,40 +65,58 @@ def get_dataset_response(query):
     Returns:
         str: Response based on the dataset.
     """
-    if "list datasets" in query.lower():
+    query = query.lower()
+
+    # Check if the query is asking for dataset names
+    if "list datasets" in query:
         return f"Available datasets: {', '.join(data['filename'].unique())}"
-    
-    if "categories" in query.lower():
+
+    # Check if the query is asking for dataset categories
+    if "categories" in query:
         categories = data['category'].unique()
         return f"Dataset categories: {', '.join(categories)}"
     
-    if "details for" in query.lower():
-        # Extract dataset name from query
-        dataset_name = query.lower().replace("details for", "").strip()
+    # Check if the query asks for details about a specific dataset
+    if "details for" in query:
+        dataset_name = query.replace("details for", "").strip()
         dataset_info = data[data['filename'].str.contains(dataset_name, case=False, na=False)]
         if not dataset_info.empty:
             details = dataset_info.to_dict(orient="records")[0]
             return f"Details for {dataset_name}: {details}"
         return f"No dataset found with name '{dataset_name}'"
     
-    return None
+    # Check for user queries asking about specific data points (i.e., data values in rows)
+    if "data from" in query:
+        dataset_name = query.replace("data from", "").strip()
+        dataset_info = data[data['filename'].str.contains(dataset_name, case=False, na=False)]
+        if not dataset_info.empty:
+            # Returning top 5 rows of the dataset as an example
+            return f"Here are the first 5 rows from {dataset_name}: {dataset_info.head().to_dict(orient='records')}"
+        return f"No data found for '{dataset_name}'"
 
-@app.route("/")
-def home():
-    return render_template("chat.html")
+    return None
 
 @app.route("/chat", methods=["POST"])
 def chat():
     user_message = request.json.get("message", "")
+    
+    # Check for greetings
+    greeting_keywords = ["hi", "hello", "hey", "howdy", "greetings"]
+    if any(greeting in user_message.lower() for greeting in greeting_keywords):
+        return jsonify({"response": "Hey, how can I help you?"})
     
     # Try to fetch dataset-specific response
     dataset_response = get_dataset_response(user_message)
     if dataset_response:
         return jsonify({"response": dataset_response})
     
-    # Use Hugging Face model for general conversational responses
-    response = generate_response(user_message)
+    # Use Hugging Face model for general conversational responses with controlled temperature
+    response = generate_response(user_message, temperature=0.7)
     return jsonify({"response": response})
+
+@app.route("/")
+def home():
+    return render_template("chat.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
