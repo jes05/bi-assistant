@@ -1,12 +1,15 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 from llama_cpp import Llama
+import configparser
 
+config = configparser.ConfigParser()
+config.read('D://Mtech//Semester4//config.ini')
 # Initialize Flask app
 app = Flask(__name__)
 
 # Load processed data
-DATA_FILE = "data/file-mapping.csv"
+DATA_FILE = config['FILEPATH']['output_path']
 data = pd.read_csv(DATA_FILE)
 
 # Load Llama model

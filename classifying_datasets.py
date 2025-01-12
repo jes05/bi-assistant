@@ -1,10 +1,14 @@
 import os
 import pandas as pd
 import numpy as np
+import configparser
+
+config = configparser.ConfigParser()
+config.read('D://Mtech//Semester4//config.ini')
 
 # Define paths
-source_path = "D://Mtech//Semester4//Sample-Datasets"
-output_path = "D://Mtech//Semester4//bi-assistant//source-classified-sets//file-mapping.csv"
+source_path =  config['FILEPATH']['source_path']
+output_path = config['FILEPATH']['output_path']
 
 # Check if the output file already exists
 if os.path.exists(output_path):
