@@ -22,6 +22,10 @@ MODEL_NAME = "EleutherAI/gpt-neo-1.3B"  # Free and open-source model
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
 
+# Set the padding token to the eos token if it's not already set
+if tokenizer.pad_token is None:
+    tokenizer.pad_token = tokenizer.eos_token  # Use eos_token as pad_token
+
 def generate_response(prompt, max_length=200):
     """
     Generate a response from the model.
@@ -33,13 +37,19 @@ def generate_response(prompt, max_length=200):
     Returns:
         str: Generated response text.
     """
-    inputs = tokenizer(prompt, return_tensors="pt")
+    # Tokenize the input prompt, ensuring padding and truncation are handled
+    inputs = tokenizer(prompt, return_tensors="pt", padding=True, truncation=True)
+
+    # Generate the response with attention mask explicitly passed
     outputs = model.generate(
         inputs.input_ids,
+        attention_mask=inputs.attention_mask,  # Pass attention_mask explicitly
         max_length=max_length,
         num_return_sequences=1,
-        pad_token_id=tokenizer.eos_token_id
+        pad_token_id=tokenizer.eos_token_id  # Set pad token to eos token
     )
+
+    # Decode the response and remove special tokens
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return response
 
@@ -73,7 +83,7 @@ def get_dataset_response(query):
 
 @app.route("/")
 def home():
-    return render_template("template/chat.html")
+    return render_template("chat.html")
 
 @app.route("/chat", methods=["POST"])
 def chat():
