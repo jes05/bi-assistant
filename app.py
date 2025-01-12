@@ -1,10 +1,13 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
-from llama_cpp import Llama
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
 import configparser
 
+# Load configuration
 config = configparser.ConfigParser()
 config.read('D://Mtech//Semester4//config.ini')
+
 # Initialize Flask app
 app = Flask(__name__)
 
@@ -12,9 +15,31 @@ app = Flask(__name__)
 DATA_FILE = config['FILEPATH']['output_path']
 data = pd.read_csv(DATA_FILE)
 
-# Load Llama model
-MODEL_PATH = "path/to/your/llama/model.bin"  # Update with your Llama model path
-llm = Llama(model_path=MODEL_PATH)
+# Load Hugging Face model and tokenizer
+MODEL_NAME = "EleutherAI/gpt-neo-1.3B"  # Free and open-source model
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
+
+def generate_response(prompt, max_length=200):
+    """
+    Generate a response from the model.
+    
+    Parameters:
+        prompt (str): The input prompt for the model.
+        max_length (int): Maximum length of the generated response.
+    
+    Returns:
+        str: Generated response text.
+    """
+    inputs = tokenizer(prompt, return_tensors="pt")
+    outputs = model.generate(
+        inputs.input_ids,
+        max_length=max_length,
+        num_return_sequences=1,
+        pad_token_id=tokenizer.eos_token_id
+    )
+    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return response
 
 def get_dataset_response(query):
     """
@@ -57,9 +82,9 @@ def chat():
     if dataset_response:
         return jsonify({"response": dataset_response})
     
-    # Use Llama model for general conversational responses
-    response = llm(user_message)
-    return jsonify({"response": response["choices"][0]["text"].strip()})
+    # Use Hugging Face model for general conversational responses
+    response = generate_response(user_message)
+    return jsonify({"response": response})
 
 if __name__ == "__main__":
     app.run(debug=True)
