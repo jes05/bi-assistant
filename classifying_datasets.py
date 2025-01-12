@@ -125,6 +125,7 @@ for filename in new_files:
         # Add features to the summary
         feature_summary.append({
             "filename": filename,
+            "filepath": source_path+"//"+filename
             "category": detected_category,
             "numerical": ", ".join(features_info["numerical"]),
             "categorical": ", ".join(features_info["categorical"]),
