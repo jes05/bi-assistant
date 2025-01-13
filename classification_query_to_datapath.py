@@ -5,25 +5,49 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
 import pickle
+from get_common_variables import user_query_data_path, output_path
+import configparser
 
-# Path to the file mapping CSV
-from get_common_variables import output_path
-file_mapping_path = output_path  
-file_mapping_df = pd.read_csv(file_mapping_path)
+# Load configuration
+config = configparser.ConfigParser()
+config.read('D://Mtech//Semester4//bi-assistant-config.ini')
 
-# Sample Training Data (You should expand this for better accuracy)
-# Assuming you augment this dataset manually or via user interactions
-training_data = [
-    {"query": "Show me stock data", "filename": "all_stocks_5yr.csv"},
-    {"query": "List all cards", "filename": "cards_data.csv"},
-    {"query": "Get user details", "filename": "cve.csv"},
-    {"query": "Fetch incident logs", "filename": "incident_event_log.csv"},
-    {"query": "Show product vulnerabilities", "filename": "products.csv"}
-]
-training_df = pd.DataFrame(training_data)
+file_mapping_df = pd.read_csv(output_path)
+
+# Load the training data from CSV
+def load_training_data():
+    if os.path.exists(user_query_data_path):
+        return pd.read_csv(user_query_data_path)
+    else:
+        raise FileNotFoundError(f"No training data found at: {user_query_data_path}")
+
+# Append new query to the training data CSV
+def append_new_query(query, filename):
+    # Load the existing training data
+    training_df = load_training_data()
+    
+    # Check if the query already exists
+    if query not in training_df['query'].values:
+        # Append new query to the DataFrame
+        new_data = pd.DataFrame({"query": [query], "filename": [filename]})
+        training_df = pd.concat([training_df, new_data], ignore_index=True)
+        
+        # Save the updated DataFrame back to the CSV
+        training_df.to_csv(user_query_data_path, index=False)
+        print(f"New query '{query}' added to the training data.")
+    else:
+        print(f"Query '{query}' already exists in the training data.")
 
 # Train the Bag-of-Words Classifier
 def train_classifier():
+    # Load training data
+    training_df = load_training_data()
+
+    # Ensure the training data has 'query' and 'filename' columns
+    if 'query' not in training_df.columns or 'filename' not in training_df.columns:
+        raise ValueError("Training data must contain 'query' and 'filename' columns.")
+
+    # Prepare the features and labels
     X = training_df["query"]
     y = training_df["filename"]
 
@@ -64,23 +88,22 @@ def load_csv_to_dataframe(filepath):
 # Process user query
 def process_user_query(user_query):
     filepath = get_filepath_from_model(user_query)
+    
     if not filepath:
         return {"error": "No matching file found for the query."}
 
-    try:
-        df = load_csv_to_dataframe(filepath)
-        print(f"Loaded file: {filepath}")
+    # Get the filename prediction from the classifier
+    predicted_filename = get_filepath_from_model(user_query)
 
-        # Example: Filtering intent
-        if "enabled" in user_query.lower():
-            if "enabled" in df.columns:
-                result = df[df["enabled"] == 1]
-            else:
-                return {"error": "'enabled' column not found in the file."}
-        else:
-            result = df
+    # Check and append the query if new
+    append_new_query(user_query, predicted_filename)
 
-        return result.to_dict(orient="records")
+    try:     
+        if 'settings' not in config.sections():
+            config.add_section('settings')  # Add 'settings' section if not exists
+        config['settings']['temp_df_path'] = temp_df_path
+        with open('D://Mtech//Semester4//bi-assistant-config.ini', 'w') as configfile:
+            config.write(configfile)  
+        return filepath
     except Exception as e:
         return {"error": str(e)}
-

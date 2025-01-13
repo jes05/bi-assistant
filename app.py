@@ -1,111 +1,220 @@
-import flask
-from flask import Flask, render_template, request, jsonify
+import nltk
+from flask import Flask, render_template, request, jsonify, send_file
 import pandas as pd
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch
-from get_common_variables import DATA_FILE, main_path
+import os
+import time
+import pandasql as ps
+from classification_query_to_datapath import process_user_query
+import joblib  # Assuming the classifier is saved as a .pkl file
+
+# Download necessary NLTK data if not already available
+nltk.download('punkt')
 
 # Initialize Flask app
 app = Flask(__name__)
 
-data = pd.read_csv(DATA_FILE)
+# Directory to save temporary CSV files for download
+DOWNLOAD_FOLDER = "temp_downloads"
+os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
-# Load Hugging Face model and tokenizer
-#MODEL_NAME = "EleutherAI/gpt-neo-1.3B"  # Free and open-source model
-#tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-MODEL_NAME = "gpt2"
-model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+# Load the pre-trained classification model (assuming it's a pickle file)
+# The model classifies query terms into column names
+model = joblib.load('models/column_classifier.pkl')
 
-# Ensure padding token is set
-tokenizer.pad_token = tokenizer.eos_token  # Set pad_token to eos_token
-
-def generate_response(prompt, max_length=200, temperature=0.7):
+# Function to process user query using NLTK and generate transformation logic
+def generate_transformation(query, available_columns):
     """
-    Generate a response from the model with focused behavior.
+    Generate transformation logic (filtering, sorting, group by) based on the user query.
     
     Parameters:
-        prompt (str): The input prompt for the model.
-        max_length (int): Maximum length of the generated response.
-        temperature (float): Controls the randomness of the output.
+        query (str): The user's natural language query.
+        available_columns (list): List of available columns in the dataset.
     
     Returns:
-        str: Generated response text.
+        dict: The conditions or transformations (e.g., filtering, sorting, group by).
     """
-    inputs = tokenizer(prompt, return_tensors="pt", padding=True, truncation=True, max_length=512)
-    outputs = model.generate(
-        inputs.input_ids,
-        max_length=max_length,
-        num_return_sequences=1,
-        pad_token_id=tokenizer.eos_token_id,  # Use eos_token_id as pad_token_id
-        attention_mask=inputs.attention_mask,
-        temperature=temperature,  # Adjusting temperature for more focused responses
-        top_p=0.9,  # Adjusting to limit randomness further
-        top_k=50, 
-        do_sample=True,
-        no_repeat_ngram_size=2  
-    )
-    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    return response
+    tokens = nltk.word_tokenize(query.lower())
+    transformations = {
+        "filters": [],
+        "sort_by": None,
+        "group_by": None,
+        "aggregation": 'mean'  # Default aggregation
+    }
+    
+    # Classify columns from the query using the model
+    classified_columns = classify_columns_from_query(query, available_columns)
+    
+    # Extract filter conditions using the classified columns
+    for column in classified_columns:
+        if "older" in tokens and "than" in tokens:
+            age_index = tokens.index("than") + 1
+            age = int(tokens[age_index])
+            transformations["filters"].append((column, ">", age))
+        elif "from" in tokens and "city" in tokens:
+            city_index = tokens.index("city") + 1
+            city = query.split("city")[-1].strip().capitalize()
+            transformations["filters"].append((column, "=", city))
+    
+    # Extract sorting condition (if any)
+    if "sorted by" in tokens:
+        sort_index = tokens.index("sorted by") + 2
+        sort_column = tokens[sort_index]
+        if sort_column.capitalize() in available_columns:
+            transformations["sort_by"] = sort_column.capitalize()
+
+    # Extract group by condition (if any)
+    if "group by" in tokens:
+        group_by_index = tokens.index("group by") + 2
+        group_by_column = tokens[group_by_index].capitalize()
+        if group_by_column in available_columns:
+            transformations["group_by"] = group_by_column
+    
+    # Handle optional aggregation (sum, count, etc.)
+    if "sum" in tokens:
+        transformations["aggregation"] = 'sum'
+    elif "count" in tokens:
+        transformations["aggregation"] = 'count'
+    
+    return transformations
+
+def classify_columns_from_query(query, available_columns):
+    """
+    Use the classification model to identify relevant columns based on the user query.
+    
+    Parameters:
+        query (str): The user's query.
+        available_columns (list): List of available columns in the dataset.
+    
+    Returns:
+        list: List of columns identified as relevant to the query.
+    """
+    tokens = nltk.word_tokenize(query.lower())
+    relevant_columns = []
+    
+    # Use the model to predict relevant columns
+    for token in tokens:
+        if token in available_columns:  # Simple direct match with available columns
+            relevant_columns.append(token)
+        else:
+            # Use the classifier to predict the column(s) related to the token
+            predicted_column = model.predict([token])[0]  # Assuming model.predict() returns column names
+            if predicted_column in available_columns:
+                relevant_columns.append(predicted_column)
+    
+    return list(set(relevant_columns))  # Remove duplicates
+
+def apply_transformation(df, transformations):
+    """
+    Apply transformations (filters, sorting, group by) to the DataFrame.
+    
+    Parameters:
+        df (pd.DataFrame): The input DataFrame.
+        transformations (dict): The transformation details (filtering, sorting).
+    
+    Returns:
+        pd.DataFrame: The transformed DataFrame.
+    """
+    # Apply filters
+    for column, operator, value in transformations["filters"]:
+        if operator == ">":
+            df = df[df[column] > value]
+        elif operator == "=":
+            df = df[df[column] == value]
+    
+    # Apply sorting
+    if transformations["sort_by"]:
+        df = df.sort_values(by=transformations["sort_by"])
+    
+    # Apply group by and aggregation
+    if transformations["group_by"]:
+        # Check if there's an aggregation and apply it
+        if transformations["aggregation"] == 'mean':
+            df = df.groupby(transformations["group_by"]).mean().reset_index()
+        elif transformations["aggregation"] == 'sum':
+            df = df.groupby(transformations["group_by"]).sum().reset_index()
+        elif transformations["aggregation"] == 'count':
+            df = df.groupby(transformations["group_by"]).count().reset_index()
+    
+    return df
 
 def get_dataset_response(query):
     """
-    Process user queries related to the dataset.
+    Process user queries and return filtered data.
     
     Parameters:
-        query (str): User's question.
+        query (str): The user's query.
     
     Returns:
-        str: Response based on the dataset.
+        str: File path to the filtered data or error message.
     """
-    query = query.lower()
-
-    # Check if the query is asking for dataset names
-    if "list datasets" in query:
-        return f"Available datasets: {', '.join(data['filename'].unique())}"
-
-    # Check if the query is asking for dataset categories
-    if "categories" in query:
-        categories = data['category'].unique()
-        return f"Dataset categories: {', '.join(categories)}"
+    # Get the dataset using the process_user_query function
+    filepath = process_user_query(query)  # Get the file path from the model
     
-    # Check if the query asks for details about a specific dataset
-    if "details for" in query:
-        dataset_name = query.replace("details for", "").strip()
-        dataset_info = data[data['filename'].str.contains(dataset_name, case=False, na=False)]
-        if not dataset_info.empty:
-            details = dataset_info.to_dict(orient="records")[0]
-            return f"Details for {dataset_name}: {details}"
-        return f"No dataset found with name '{dataset_name}'"
+    if not filepath:
+        return "No matching file found for the query."
     
-    # Check for user queries asking about specific data points (i.e., data values in rows)
-    if "data from" in query:
-        dataset_name = query.replace("data from", "").strip()
-        dataset_info = data[data['filename'].str.contains(dataset_name, case=False, na=False)]
-        if not dataset_info.empty:
-            # Returning top 5 rows of the dataset as an example
-            return f"Here are the first 5 rows from {dataset_name}: {dataset_info.head().to_dict(orient='records')}"
-        return f"No data found for '{dataset_name}'"
+    # Load the dataset
+    try:
+        df = pd.read_csv(filepath)
+    except Exception as e:
+        return f"Error loading dataset: {str(e)}"
+    
+    if df is None or df.empty:
+        return "No data available for the given query."
+    
+    # Get available columns from the dataset
+    available_columns = df.columns.tolist()
 
-    return None
+    # Generate the transformation logic
+    transformations = generate_transformation(query, available_columns)
+    print(f"Generated Transformations: {transformations}")
+
+    # Apply the transformation to the DataFrame
+    transformed_df = apply_transformation(df, transformations)
+    
+    if transformed_df.empty:
+        return "No data matches the query conditions."
+
+    # Generate a unique filename based on the current timestamp
+    file_name = f"filtered_data_{int(time.time())}.csv"
+    file_path = os.path.join(DOWNLOAD_FOLDER, file_name)
+    transformed_df.to_csv(file_path, index=False)
+    print(transformed_df)
+    return file_path
 
 @app.route("/chat", methods=["POST"])
 def chat():
     user_message = request.json.get("message", "")
     
-    # Check for greetings
-    greeting_keywords = ["hi", "hello", "hey", "howdy", "greetings"]
-    if any(greeting in user_message.lower() for greeting in greeting_keywords):
-        return jsonify({"response": "Hey, how can I help you?"})
-    
-    # Try to fetch dataset-specific response
+    # Process the user query and get the filtered dataset
     dataset_response = get_dataset_response(user_message)
-    if dataset_response:
+    
+    if isinstance(dataset_response, str):  # If there is an error
         return jsonify({"response": dataset_response})
     
-    # Use Hugging Face model for general conversational responses with controlled temperature
-    response = generate_response(user_message, temperature=0.7)
-    return jsonify({"response": response})
+    # If successful, provide a link to download the CSV
+    return jsonify({
+        "response": "Your filtered data is ready. Click to download.",
+        "download_link": f"/download/{os.path.basename(dataset_response)}"
+    })
+
+@app.route("/download/<filename>")
+def download(filename):
+    """
+    Serve the filtered CSV file for download.
+    
+    Parameters:
+        filename (str): The name of the CSV file to download.
+    
+    Returns:
+        File: The CSV file to be downloaded.
+    """
+    file_path = os.path.join(DOWNLOAD_FOLDER, filename)
+    
+    if os.path.exists(file_path):
+        return send_file(file_path, as_attachment=True)
+    
+    return jsonify({"error": "File not found!"})
 
 @app.route("/")
 def home():

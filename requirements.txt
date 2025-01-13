@@ -6,7 +6,9 @@ llama-cpp-python
 numpy==1.23.3
 scikit-learn==1.5.1
 pandas==1.5.3
-#joblib==1.2.0
+nltk
+time
+joblib
 #imbalanced-learn==0.9.1
 #gunicorn==20.1.0
 #tpot==0.12.2
