@@ -1,0 +1,102 @@
+,query,filename
+0,Show me stock data,all_stocks_5yr.csv
+1,List all cards,cards_data.csv
+2,Get user details,cve.csv
+3,Fetch incident logs,incident_event_log.csv
+4,Show product vulnerabilities,products.csv
+5,View transaction details,transactions_data.csv
+6,Get user financial info,users_data.csv
+7,List vendor details,vendors.csv
+8,Show vendor product details,vendor_product.csv
+9,Fetch VM cloud data,vmCloud_data.csv
+10,Show stock prices for last 5 years,all_stocks_5yr.csv
+11,List all client card info,cards_data.csv
+12,Fetch CVE data,cve.csv
+13,Get all incidents for today,incident_event_log.csv
+14,Show active vulnerabilities,products.csv
+15,List all transactions in the last month,transactions_data.csv
+16,Get all user credit scores,users_data.csv
+17,Show vendor contact info,vendors.csv
+18,Display vendor product catalog,vendor_product.csv
+19,Show cloud VM data for last 24 hours,vmCloud_data.csv
+20,Fetch stock volume data,all_stocks_5yr.csv
+21,List all transaction errors,transactions_data.csv
+22,Fetch CVE impact data,cve.csv
+23,Show recent incident updates,incident_event_log.csv
+24,List product vulnerabilities for 2025,products.csv
+25,Fetch all transactions with errors,transactions_data.csv
+26,Show user income details,users_data.csv
+27,List vendor products by category,vendor_product.csv
+28,Display VM CPU usage,vmCloud_data.csv
+29,Show stock open prices for the last 5 years,all_stocks_5yr.csv
+30,Get all card brand details,cards_data.csv
+31,List CVE access complexity,cve.csv
+32,Get all incident logs by urgency,incident_event_log.csv
+33,Show product category details,products.csv
+34,List all transactions by merchant,transactions_data.csv
+35,Fetch user debt details,users_data.csv
+36,List vendor contact details,vendors.csv
+37,Show vendor product sales data,vendor_product.csv
+38,Display VM power consumption data,vmCloud_data.csv
+39,Fetch stock closing prices,all_stocks_5yr.csv
+40,List all active cards,cards_data.csv
+41,Show CVE impact on availability,cve.csv
+42,Display incident priority data,incident_event_log.csv
+43,Show vulnerable products by CVE,products.csv
+44,Get transactions with highest amounts,transactions_data.csv
+45,Show user per capita income,users_data.csv
+46,List all vendor products with price range,vendor_product.csv
+47,Show VM network traffic,vmCloud_data.csv
+48,Display historical stock volume,all_stocks_5yr.csv
+49,List all users with high credit score,users_data.csv
+50,Fetch incident logs by location,incident_event_log.csv
+51,Get all transactions with merchant info,transactions_data.csv
+52,List CVE affected systems,cve.csv
+53,Show vendor financial details,vendors.csv
+54,Fetch products by vulnerability,products.csv
+55,List VM energy efficiency data,vmCloud_data.csv
+56,Get stock price range,all_stocks_5yr.csv
+57,List transaction errors by merchant,transactions_data.csv
+58,Show user total debt,users_data.csv
+59,Display CVE impact on confidentiality,cve.csv
+60,Get incident resolution time,incident_event_log.csv
+61,Show vendor product availability,vendor_product.csv
+62,Fetch VM task types,vmCloud_data.csv
+63,List all products with vulnerabilities,products.csv
+64,Show stock price history,all_stocks_5yr.csv
+65,Fetch card transactions by merchant,cards_data.csv
+66,Show vulnerability data by year,cve.csv
+67,List all incidents by priority,incident_event_log.csv
+68,Get transactions filtered by region,transactions_data.csv
+69,Show product vulnerabilities with CVSS,products.csv
+70,List all vendor products in stock,vendor_product.csv
+71,Fetch cloud VM system usage,vmCloud_data.csv
+72,Display financial data for users,users_data.csv
+73,List CVE access vector data,cve.csv
+74,Fetch incident details by category,incident_event_log.csv
+75,Show stock data with high variance,all_stocks_5yr.csv
+76,Get list of user ages,users_data.csv
+77,Show product CVE vulnerabilities,products.csv
+78,List all vendor information,vendors.csv
+79,Show VM memory usage,vmCloud_data.csv
+80,Display all cards with chip info,cards_data.csv
+81,Fetch incident logs for product issues,incident_event_log.csv
+82,List users with multiple credit cards,users_data.csv
+83,Show cloud VM execution times,vmCloud_data.csv
+84,Display stock data for last week,all_stocks_5yr.csv
+85,Get cards with most transactions,cards_data.csv
+86,List products by CVE type,products.csv
+87,Show transaction data for merchants,transactions_data.csv
+88,List vendor product categories,vendor_product.csv
+89,Show VM CPU efficiency,vmCloud_data.csv
+90,Get latest CVE vulnerabilities,cve.csv
+91,Show product vulnerabilities by impact,products.csv
+92,List all users with large debt,users_data.csv
+93,Fetch transaction amounts for vendors,transactions_data.csv
+94,Get incident data by system affected,incident_event_log.csv
+95,List all products with recent updates,products.csv
+96,Show historical stock data by month,all_stocks_5yr.csv
+97,Show list of cards issued,cards_data.csv
+98,Get detailed CVE access data,cve.csv
+99,List all vendor transactions,vendor_product.csv
+100,Show cloud VM memory usage stats,vmCloud_data.csv

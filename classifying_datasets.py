@@ -2,13 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import configparser
-
-config = configparser.ConfigParser()
-config.read('D://Mtech//Semester4//bi-assistant-config.ini')
-
-# Define paths
-source_path =  config['FILEPATH']['source_path']
-output_path = config['FILEPATH']['output_path']
+from get_common_variables import source_path, output_path
 
 # Check if the output file already exists
 if os.path.exists(output_path):
