@@ -3,18 +3,11 @@ from flask import Flask, render_template, request, jsonify
 import pandas as pd
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
-import configparser
-
-# Load configuration
-config = configparser.ConfigParser()
-config.read('D://Mtech//Semester4//bi-assistant-config.ini')
+from get_common_variables import DATA_FILE, main_path
 
 # Initialize Flask app
 app = Flask(__name__)
 
-# Load processed data
-DATA_FILE = config['FILEPATH']['output_path']
-main_path = config['FILEPATH']['main_path']
 data = pd.read_csv(DATA_FILE)
 
 # Load Hugging Face model and tokenizer
