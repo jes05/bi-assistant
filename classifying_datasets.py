@@ -7,9 +7,20 @@ from get_common_variables import source_path, output_path
 # Check if the output file already exists
 if os.path.exists(output_path):
     processed_df = pd.read_csv(output_path)
-    processed_files = set(processed_df['filename'].tolist())
+    
+    # Print columns to verify structure
+    print(f"Columns in the processed DataFrame: {processed_df.columns.tolist()}")
+    
+    # Ensure 'filename' column exists in the processed file
+    if 'filename' in processed_df.columns:
+        processed_files = set(processed_df['filename'].tolist())
+    else:
+        print("Warning: 'filename' column not found in the existing processed file. Initializing empty set.")
+        processed_files = set()
 else:
-    processed_df = pd.DataFrame()
+    processed_df = pd.DataFrame(columns=['filename', 'filepath', 'column_list', 'category', 'numerical', 
+                                         'categorical', 'datetime', 'text', 'binary', 'high_cardinality', 
+                                         'low_variance', 'missing_values'])
     processed_files = set()
 
 # Get the list of all files in the source directory
@@ -123,7 +134,8 @@ for filename in new_files:
         # Add features to the summary
         feature_summary.append({
             "filename": filename,
-            "filepath": source_path+"//"+filename,
+            "filepath": source_path + "//" + filename,
+            "column_list": ", ".join(df.columns),
             "category": detected_category,
             "numerical": ", ".join(features_info["numerical"]),
             "categorical": ", ".join(features_info["categorical"]),
@@ -145,6 +157,11 @@ for filename in new_files:
 # Combine new data with existing data and save to the output file
 if feature_summary:
     new_summary_df = pd.DataFrame(feature_summary)
+    
+    # Check if 'filename' exists in the processed file to avoid duplication
+    if 'filename' not in processed_df.columns:
+        processed_df['filename'] = ''
+
     updated_df = pd.concat([processed_df, new_summary_df], ignore_index=True)
     updated_df.to_csv(output_path, index=False)
     print(f"Feature summary updated and saved to {output_path}")

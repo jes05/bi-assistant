@@ -3,40 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot Assistant</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Chat Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+            background-color: #f4f7fc;
+            margin: 0;
+        }
+        #chat-container {
+            width: 80%;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            margin: 20px;
+            overflow-y: auto;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        #sidebar {
+            width: 20%;
+            background-color: #f0f0f0;
+            padding: 10px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+        #sidebar h3 {
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        .message {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .user-message {
+            background-color: #d1f7d1;
+            align-self: flex-end;
+            max-width: 70%;
+        }
+        .bot-message {
+            background-color: #f1f1f1;
+            align-self: flex-start;
+            max-width: 70%;
+        }
+        .history-item {
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .history-item:hover {
+            background-color: #ddd;
+        }
+        #message-input {
+            display: flex;
+            margin-top: 10px;
+        }
+        #message-input input {
+            width: 80%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #message-input button {
+            width: 20%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #message-input button:hover {
+            background-color: #45a049;
+        }
+    </style>
 </head>
 <body>
-    <div id="chat-box" style="width: 300px; height: 400px; overflow-y: auto; border: 1px solid black; padding: 10px;">
-        <div id="messages"></div>
-        <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off" style="width: 100%; padding: 10px;"/>
+    <div id="sidebar">
+        <h3>History</h3>
+        <div id="history"></div>
     </div>
-    
-    <script>
-        $(document).ready(function () {
-            $('#user-input').on('keypress', function (e) {
-                if (e.which == 13) {  // Enter key pressed
-                    let userMessage = $('#user-input').val();
-                    if (userMessage.trim() !== '') {
-                        // Append user's message
-                        $('#messages').append('<div>You: ' + userMessage + '</div>');
-                        $('#user-input').val('');  // Clear input field
+    <div id="chat-container">
+        <div id="messages"></div>
+        <div id="message-input">
+            <input type="text" id="user-message" placeholder="Type your query..." />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
 
-                        // Send message to Flask backend
-                        $.ajax({
-                            url: '/chat',
-                            type: 'POST',
-                            contentType: 'application/json',
-                            data: JSON.stringify({ "message": userMessage }),
-                            success: function (response) {
-                                $('#messages').append('<div>Bot: ' + response.response + '</div>');
-                                $('#messages').scrollTop($('#messages')[0].scrollHeight);  // Scroll to the latest message
-                            }
-                        });
-                    }
+    <script>
+        let messageHistory = []; // Array to hold the message history
+
+        // Function to send a message to the backend and handle the response
+        function sendMessage() {
+            const userMessage = document.getElementById("user-message").value;
+            if (userMessage.trim() === "") return;
+
+            // Add the user's message to the chat
+            displayMessage(userMessage, "user");
+            
+            // Send the message to the backend
+            fetch("/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ message: userMessage })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const botResponse = data.response;
+                const downloadLink = data.download_link;
+                
+                // Add the bot's response to the chat
+                displayMessage(botResponse, "bot");
+
+                // If there's a download link, display it
+                if (downloadLink) {
+                    displayMessage(`<a href="${downloadLink}" target="_blank">Download your data</a>`, "bot");
                 }
+
+                // Add to history
+                addToHistory(userMessage, botResponse);
+
+                // Clear the input field
+                document.getElementById("user-message").value = "";
+            })
+            .catch(error => {
+                console.error("Error:", error);
             });
-        });
+        }
+
+        // Function to display a message in the chat
+        function displayMessage(message, sender) {
+            const messageContainer = document.createElement("div");
+            messageContainer.classList.add("message", sender === "user" ? "user-message" : "bot-message");
+            messageContainer.innerHTML = message;
+            document.getElementById("messages").appendChild(messageContainer);
+        }
+
+        // Function to add a message to the history
+        function addToHistory(userMessage, botResponse) {
+            messageHistory.push({ userMessage, botResponse });
+            updateHistorySidebar();
+        }
+
+        // Function to update the history sidebar
+        function updateHistorySidebar() {
+            const historyDiv = document.getElementById("history");
+            historyDiv.innerHTML = ""; // Clear current history
+
+            messageHistory.forEach((item, index) => {
+                const historyItem = document.createElement("div");
+                historyItem.classList.add("history-item");
+                historyItem.textContent = `Query ${index + 1}: ${item.userMessage}`;
+                historyItem.onclick = () => displayMessage(item.botResponse, "bot");
+                historyDiv.appendChild(historyItem);
+            });
+        }
     </script>
 </body>
 </html>

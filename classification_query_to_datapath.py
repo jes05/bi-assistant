@@ -101,7 +101,7 @@ def process_user_query(user_query):
     try:     
         if 'settings' not in config.sections():
             config.add_section('settings')  # Add 'settings' section if not exists
-        config['settings']['temp_df_path'] = temp_df_path
+        config['settings']['temp_df_path'] = predicted_filename
         with open('D://Mtech//Semester4//bi-assistant-config.ini', 'w') as configfile:
             config.write(configfile)  
         return filepath

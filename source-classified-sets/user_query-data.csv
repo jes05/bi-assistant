@@ -112,3 +112,13 @@ Unnamed: 0,query,filename
 ,give me count of vms by task_type,D://Mtech//Semester4//Sample-Datasets//products.csv
 ,count of incidents by incident_state,D://Mtech//Semester4//Sample-Datasets//incident_event_log.csv
 ,filter incident data by incident_state = new,D://Mtech//Semester4//Sample-Datasets//incident_event_log.csv
+,give me count of vms in cloud by priority,D://Mtech//Semester4//Sample-Datasets//vmCloud_data.csv
+,give me count of products by products,D://Mtech//Semester4//Sample-Datasets//products.csv
+,give me count of cards by client,D://Mtech//Semester4//Sample-Datasets//cards_data.csv
+,hey,D://Mtech//Semester4//Sample-Datasets//vmCloud_data.csv
+,give me sum of cpuusage in cloud by priority,D://Mtech//Semester4//Sample-Datasets//vmCloud_data.csv
+,give me sum in cloud by priority,D://Mtech//Semester4//Sample-Datasets//vmCloud_data.csv
+,give me count of incidents by priority,D://Mtech//Semester4//Sample-Datasets//incident_event_log.csv
+,give me count of incidents by state,D://Mtech//Semester4//Sample-Datasets//incident_event_log.csv
+,show me cloud data,D://Mtech//Semester4//Sample-Datasets//vmCloud_data.csv
+,filter incident by state = Active,D://Mtech//Semester4//Sample-Datasets//incident_event_log.csv
