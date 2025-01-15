@@ -122,3 +122,4 @@ Unnamed: 0,query,filename
 ,give me count of incidents by state,D://Mtech//Semester4//Sample-Datasets//incident_event_log.csv
 ,show me cloud data,D://Mtech//Semester4//Sample-Datasets//vmCloud_data.csv
 ,filter incident by state = Active,D://Mtech//Semester4//Sample-Datasets//incident_event_log.csv
+,awesome!,D://Mtech//Semester4//Sample-Datasets//vmCloud_data.csv
